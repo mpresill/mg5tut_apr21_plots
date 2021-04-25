@@ -23,6 +23,8 @@ def setup_histograms():
     # Bin edges for each observable
     bins ={
         'dilep_minv' : np.linspace(500,1500,50),
+        'dilep_minv_rwgt_1p0' : np.linspace(500,1500,50),
+        'dilep_minv_rwgt_0p1' : np.linspace(500,1500,50),
         'lep_eta'    : np.linspace(-5,5,50),
         'lep_pt'     : np.linspace(0,1000,50),
         'dilep_pt'   : np.linspace(0,1000,50),
@@ -42,7 +44,12 @@ def setup_histograms():
 def analyze(lhe_file):
     '''Event loop + histogram filling'''
 
-    reader = LHEReader(lhe_file)
+    reader = LHEReader(
+                        lhe_file,
+                        weight_mode='dict',         # Weights will be read as a dictionary
+                        weight_regex='(1|.*Coup.*)' # Only read weights with ID 0 (nominal),
+                                                    # or fitting our reweight names
+                        )
     histograms = setup_histograms()
     for event in reader:
         # Find charged leptons
@@ -59,11 +66,13 @@ def analyze(lhe_file):
             else:
                 combined_p4 = p4
 
-            histograms['lep_eta'].fill(p4.eta, weight=event.weights[0])
-            histograms['lep_pt'].fill(p4.pt, weight=event.weights[0])
+            histograms['lep_eta'].fill(p4.eta, weight=event.weights['1'])
+            histograms['lep_pt'].fill(p4.pt, weight=event.weights['1'])
 
-        histograms['dilep_minv'].fill(combined_p4.mass, weight=event.weights[0])
-        histograms['dilep_pt'].fill(combined_p4.pt, weight=event.weights[0])
+        histograms['dilep_minv'].fill(combined_p4.mass, weight=event.weights['1'])
+        histograms['dilep_minv_rwgt_1p0'].fill(combined_p4.mass, weight=event.weights['Coup-1p0'])
+        histograms['dilep_minv_rwgt_0p1'].fill(combined_p4.mass, weight=event.weights['Coup-0p1'])
+        histograms['dilep_pt'].fill(combined_p4.pt, weight=event.weights['1'])
     return histograms
 
 histograms = analyze('cmsgrid_final.lhe')

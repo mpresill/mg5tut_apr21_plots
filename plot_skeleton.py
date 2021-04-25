@@ -6,16 +6,27 @@ from lhereader import LHEReader
 from matplotlib import pyplot as plt
 
 
-def setup_histograms():
+def plot(histograms):
+    '''Plots all histograms. No need to change.'''
+    outdir = './plots/'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
 
+    for observable, histogram in histograms.items():
+        plt.gcf().clf()
+        histogram.plot()
+        plt.gcf().savefig(f"{outdir}/{observable}.pdf")
+
+def setup_histograms():
+    '''Histogram initialization. Add new histos here.'''
+    
     # Bin edges for each observable
+    # TODO: Add your new observables and binnings here
     bins ={
         'dilep_minv' : np.linspace(500,1500,50),
-        'lep_eta'    : np.linspace(-5,5,50),
-        'lep_pt'     : np.linspace(0,1000,50),
-        'dilep_pt'   : np.linspace(0,1000,50),
     } 
 
+    # No need to change this part
     histograms = { 
                     observable : (
                                     Hist.new
@@ -28,6 +39,8 @@ def setup_histograms():
     return histograms
 
 def analyze(lhe_file):
+    '''Event loop + histogram filling'''
+    
     reader = LHEReader(lhe_file)
     histograms = setup_histograms()
     for event in reader:
@@ -45,22 +58,10 @@ def analyze(lhe_file):
             else:
                 combined_p4 = p4
 
-            histograms['lep_eta'].fill(p4.eta, weight=event.weights[0])
-            histograms['lep_pt'].fill(p4.pt, weight=event.weights[0])
-
+        # TODO: Fill more histograms around here
         histograms['dilep_minv'].fill(combined_p4.mass, weight=event.weights[0])
-        histograms['dilep_pt'].fill(combined_p4.pt, weight=event.weights[0])
+
     return histograms
-
-def plot(histograms):
-    outdir = './plots/'
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-
-    for observable, histogram in histograms.items():
-        plt.gcf().clf()
-        histogram.plot()
-        plt.gcf().savefig(f"{outdir}/{observable}.pdf")
 
 histograms = analyze('cmsgrid_final.lhe')
 plot(histograms)
